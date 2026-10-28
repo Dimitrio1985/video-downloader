@@ -1,0 +1,41 @@
+name: Build Video Downloader APK
+
+on:
+  push:
+    paths:
+      - 'video-downloader-project.zip'
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout uploaded files
+        uses: actions/checkout@v4
+      - name: Extract Android project archive
+        run: |
+          unzip -q video-downloader-project.zip
+          test -f video-downloader/settings.gradle
+          test -f video-downloader/app/build.gradle
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Build debug APK
+        run: gradle --no-daemon -p video-downloader assembleDebug
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-downloader-debug-apk
+          path: video-downloader/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
